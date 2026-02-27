@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "frontend-deploy-standard": {
+      "source": "ducter-dev/mis-skills-ai",
+      "sourceType": "github",
+      "computedHash": "799596797fc0c510f77486341564b46d38489c8035f6e2bcea232559bb840d14"
+    }
+  }
+}
