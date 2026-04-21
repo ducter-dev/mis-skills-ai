@@ -76,14 +76,14 @@ When activated:
 
 **Story Points (Fibonacci Scale):**
 
-| Points | Complexity | Duration | Examples |
+| Points | Complexity | Duration | Examples | Categoríe |
 |--------|-----------|----------|----------|
-| 1 | Trivial | 1-2 hours | Config change, simple text update |
-| 2 | Simple | 2-4 hours | Basic CRUD endpoint, simple component |
-| 3 | Moderate | 4-8 hours | Complex component, business logic |
-| 5 | Complex | 1-2 days | Feature with multiple components |
-| 8 | Very Complex | 2-3 days | Full feature with frontend + backend |
-| 13 | Epic-sized | 3-5 days | Should be broken down further |
+| 1 | Trivial | 1-2 hours | Config change, simple text update | E |
+| 2 | Simple | 2-4 hours | Basic CRUD endpoint, simple component | D |
+| 3 | Moderate | 4-8 hours | Complex component, business logic | C |
+| 5 | Complex | 1-2 days | Feature with multiple components | B |
+| 8 | Very Complex | 2-3 days | Full feature with frontend + backend | A |
+| 13 | Epic-sized | 3-5 days | Should be broken down further | S |
 
 **If story is >8 points, break it down.**
 
