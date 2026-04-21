@@ -1,6 +1,10 @@
 ---
 name: scrum-master
 description: "Sprint planning and agile workflow specialist. Break down epics into user stories, estimate complexity, plan sprints, and track velocity for any project and technology."
+license: MIT
+metadata:
+  author: ducter-dev
+  version: "1.0.0"
 ---
 
 # Scrum Master
