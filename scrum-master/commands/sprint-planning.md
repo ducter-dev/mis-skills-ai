@@ -80,12 +80,14 @@ Project Inventory:
    - Stories should be independent where possible
    - Stories should be testable
 
-2. **Apply story template:**
+2.    **Apply story template:**
    ```markdown
    ### STORY-{number}: {Title}
 
    **Epic:** {Epic ID/name}
    **Priority:** {Must Have | Should Have | Could Have}
+   **Story Points:** {1|2|3|5|8|13}
+   **Label:** {E|D|C|B|A|S}
 
    **User Story:**
    As a {user type}
@@ -144,12 +146,12 @@ Project Inventory:
 **For each story, assign points using Fibonacci scale:**
 
 **Estimation guidelines:**
-- **1 point:** Trivial (1-2 hours) - Config change, text update
-- **2 points:** Simple (2-4 hours) - Basic CRUD, simple component
-- **3 points:** Moderate (4-8 hours) - Complex component, business logic
-- **5 points:** Complex (1-2 days) - Feature with multiple components
-- **8 points:** Very Complex (2-3 days) - Full feature frontend + backend
-- **13 points:** Epic-sized (3-5 days) - **BREAK THIS DOWN**
+- **1 point [E]:** Trivial (1-2 hours) - Config change, text update
+- **2 points [D]:** Simple (2-4 hours) - Basic CRUD, simple component
+- **3 points [C]:** Moderate (4-8 hours) - Complex component, business logic
+- **5 points [B]:** Complex (1-2 days) - Feature with multiple components
+- **8 points [A]:** Very Complex (2-3 days) - Full feature frontend + backend
+- **13 points [S]:** Epic-sized (3-5 days) - **BREAK THIS DOWN**
 
 **Estimation factors:**
 - Complexity of business logic
@@ -240,10 +242,10 @@ For each sprint:
 **Goal:** {What this sprint delivers}
 
 **Stories:**
-- STORY-001: User registration (5 points) - Must Have
-- STORY-002: User login (3 points) - Must Have
-- STORY-003: Password reset (3 points) - Should Have
-- STORY-INF-001: Database schema (5 points) - Infrastructure
+- STORY-001: User registration (5 points) [B] - Must Have
+- STORY-002: User login (3 points) [C] - Must Have
+- STORY-003: Password reset (3 points) [C] - Should Have
+- STORY-INF-001: Database schema (5 points) [B] - Infrastructure
 
 **Total:** 16 points / 30 capacity (53% — buffer for first sprint)
 
@@ -377,6 +379,53 @@ For a story to be considered complete:
 
 Begin Sprint 1. Run `/create-story STORY-001` to create a detailed story document,
 or `/dev-story STORY-001` to start implementing immediately.
+
+---
+
+## Export Guide
+
+This document is structured for direct import into productivity tools.
+
+### Label Reference
+
+| Label | Points | Complexity |
+|-------|--------|-----------|
+| E | 1 | Trivial |
+| D | 2 | Simple |
+| C | 3 | Moderate |
+| B | 5 | Complex |
+| A | 8 | Very Complex |
+| S | 13 | Epic-sized (break down) |
+
+### Notion
+1. Open a Notion page and type `/` → select **Import** or paste directly.
+2. Paste the full Markdown content — headings, tables, and checkboxes render natively.
+3. Each story can be converted to a Notion database entry: highlight the story block → **Turn into** → **Page**.
+4. Map fields: `Story Points` → Number property, `Label` → Select property, `Priority` → Select property.
+
+### Jira
+1. Create a new **Epic** per epic in this plan.
+2. Create a **Story** issue per `STORY-XXX` entry.
+3. Copy `User Story`, `Acceptance Criteria`, and `Technical Notes` into the issue description.
+4. Set `Story Points` from the `Story Points` field and add the `Label` as a tag.
+
+### Linear
+1. Create a new **Project** for this sprint plan.
+2. Create one **Issue** per story.
+3. Paste the story Markdown into the issue description — Linear renders it natively.
+4. Map `Label` to Linear's **Size** property (E=XS, D=S, C=M, B=L, A=XL, S=Epic).
+
+### GitHub Projects
+1. Create one **Issue** per story in the repository.
+2. Copy `Acceptance Criteria` as a task list (`- [ ] ...`) in the issue body.
+3. Add the `Label` field as a GitHub label (create labels: `size/E`, `size/D`, etc.).
+4. Add issues to a GitHub Project board and map to sprints using iterations.
+
+### ClickUp / Trello / Others
+- One card/task per story.
+- Use `Story Points` as the effort/points field.
+- Use `Label` as the size tag or card label.
+- Copy `Acceptance Criteria` as a checklist.
 ```
 
 **Save document** per `helpers.md#Save-Output-Document`:
@@ -457,12 +506,12 @@ Run /create-story STORY-001 or /dev-story STORY-001 to start.
 
 ## Story Point Calibration
 
-**1 point (1-2 hours):** Config change, text update, simple fix
-**2 points (2-4 hours):** Basic CRUD endpoint, simple component
-**3 points (4-8 hours):** Complex component, business logic, integration tests
-**5 points (1-2 days):** Feature with frontend + backend, data migration
-**8 points (2-3 days):** Complete user flow, multiple components, external service integration
-**13 points (3-5 days):** **TOO BIG — BREAK IT DOWN**
+**1 point [E] (1-2 hours):** Config change, text update, simple fix
+**2 points [D] (2-4 hours):** Basic CRUD endpoint, simple component
+**3 points [C] (4-8 hours):** Complex component, business logic, integration tests
+**5 points [B] (1-2 days):** Feature with frontend + backend, data migration
+**8 points [A] (2-3 days):** Complete user flow, multiple components, external service integration
+**13 points [S] (3-5 days):** **TOO BIG — BREAK IT DOWN**
 
 ---
 

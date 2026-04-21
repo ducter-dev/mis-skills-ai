@@ -169,12 +169,12 @@ This story implements a self-service password reset flow.
 ### Part 6: Story Points Estimation
 
 **Apply Fibonacci scale:**
-- 1: Trivial (1-2 hours)
-- 2: Simple (2-4 hours)
-- 3: Moderate (4-8 hours)
-- 5: Complex (1-2 days)
-- 8: Very Complex (2-3 days)
-- 13: Too large — **BREAK DOWN**
+- 1 [E]: Trivial (1-2 hours)
+- 2 [D]: Simple (2-4 hours)
+- 3 [C]: Moderate (4-8 hours)
+- 5 [B]: Complex (1-2 days)
+- 8 [A]: Very Complex (2-3 days)
+- 13 [S]: Too large — **BREAK DOWN**
 
 **Factors:** business logic complexity, number of components, testing needs, unknowns.
 
@@ -225,6 +225,7 @@ If the story is already estimated in the sprint plan, confirm or adjust. If >8 p
 **Epic:** {Epic ID/name}
 **Priority:** {Must Have | Should Have | Could Have}
 **Story Points:** {points}
+**Label:** {E|D|C|B|A|S}
 **Status:** Not Started
 **Assigned To:** Unassigned
 **Created:** {date}
@@ -285,6 +286,35 @@ So that {benefit}
 
 **Status History:**
 - {date}: Created
+
+---
+
+## Export Guide
+
+This story document is structured for direct import into productivity tools.
+
+### Label Reference
+| Label | Points | Complexity |
+|-------|--------|-----------|
+| E | 1 | Trivial |
+| D | 2 | Simple |
+| C | 3 | Moderate |
+| B | 5 | Complex |
+| A | 8 | Very Complex |
+| S | 13 | Epic-sized (break down) |
+
+### Notion
+- Paste Markdown directly into a Notion page — checkboxes and tables render natively.
+- Convert to a database entry: **Turn into** → **Page**, then add `Label` as a Select property.
+
+### Jira
+- Create a **Story** issue, paste `User Story` and `Acceptance Criteria` into the description.
+- Set `Story Points` and add `Label` as a tag.
+
+### Linear / GitHub Issues / ClickUp
+- Create one issue/task per story.
+- Paste Markdown content as the description.
+- Map `Label` to the size/effort field of the platform.
 ```
 
 **Save document** per `helpers.md#Save-Output-Document`:
@@ -310,7 +340,7 @@ Per `helpers.md#Update-Sprint-Status`:
 STORY-{ID}: {Title}
 Epic: {epic}
 Priority: {priority}
-Story Points: {points}
+Story Points: {points} [{label}]
 
 Acceptance Criteria: {count}
 Dependencies: {count}
