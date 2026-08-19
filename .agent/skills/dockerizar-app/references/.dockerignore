@@ -1,0 +1,45 @@
+# Dependencias e instalaciones locales
+node_modules
+**/node_modules
+
+# Salidas de build (se generan dentro de la imagen)
+.output
+.nuxt
+.nitro
+.data
+.cache
+dist
+
+# Cliente del ORM generado (se genera dentro de la imagen)
+generated
+prisma/generated
+
+# Git y control de versiones
+.git
+.gitignore
+
+# Variables de entorno (se inyectan en runtime, nunca en la imagen)
+.env
+.env.*
+!.env.example
+
+# Archivos Docker (no se necesitan dentro del contexto construido).
+# OJO: docker/nginx/default.conf SÍ se copia en la etapa nginx, no lo ignores.
+Dockerfile*
+docker-compose*.yml
+
+# Logs y temporales
+logs
+*.log
+.DS_Store
+
+# Herramientas de editor / agentes
+.idea
+.fleet
+.windsurf
+.agents
+.claude
+
+# Documentación y tests
+README.md
+tests

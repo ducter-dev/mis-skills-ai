@@ -1,0 +1,79 @@
+# ===========================================================================
+# Entorno de DESARROLLO
+#
+#   docker compose up
+#
+# - App con hot-reload (bind-mount del código fuente).
+# - Puertos de app y base de datos publicados al host mediante variables
+#   (APP_PORT, POSTGRES_PORT) para poder depurar desde el host.
+# - La app se comunica con la base de datos por la red interna de Docker
+#   usando el hostname "db".
+# ===========================================================================
+
+services:
+  app:
+    build:
+      context: .
+      target: dev
+    restart: unless-stopped
+    ports:
+      # Puerto de la aplicación (configurable). Solo en desarrollo.
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: development
+      NUXT_HOST: 0.0.0.0
+      NUXT_PORT: 3000
+      # DATABASE_URL apunta al servicio "db" por red interna (siempre 5432
+      # dentro de la red, independientemente del puerto publicado al host).
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-app_user}:${POSTGRES_PASSWORD:-app_password}@db:5432/${POSTGRES_DB:-app_db}?schema=public"
+      # Polling de ficheros: necesario para hot-reload fiable con bind-mounts
+      # en Docker Desktop (macOS/Windows). En Linux puedes ponerlo en "false".
+      CHOKIDAR_USEPOLLING: "true"
+      NUXT_VITE_SERVER_WATCH_USE_POLLING: "true"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      # Código fuente montado para hot-reload.
+      - .:/app
+      # Volúmenes anónimos: preservan lo generado en el contenedor y evitan
+      # que el host pise node_modules / artefactos de build.
+      - /app/node_modules
+      - /app/.nuxt
+      - /app/.output
+      - /app/generated
+    # Al arrancar: genera cliente del ORM, aplica migraciones y seed, luego dev.
+    entrypoint: ["sh", "docker/docker-entrypoint.sh"]
+    command: ["pnpm", "dev", "--host"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-net
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      # Puerto de la base de datos (configurable). Solo en desarrollo.
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_password}
+      POSTGRES_DB: ${POSTGRES_DB:-app_db}
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user} -d ${POSTGRES_DB:-app_db}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-net
+
+volumes:
+  pgdata-dev:
+
+networks:
+  app-net:
+    driver: bridge
