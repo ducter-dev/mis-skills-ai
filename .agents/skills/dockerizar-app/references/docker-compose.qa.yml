@@ -1,0 +1,126 @@
+# ===========================================================================
+# Entorno de QA / STAGING
+#
+#   docker compose -f docker-compose.qa.yml --env-file .env.qa up --build -d
+#
+# QA es un CLON de producción: mismas imágenes y mismas etapas del Dockerfile
+# (build once, promote), para que lo que se prueba aquí se comporte igual que
+# en prod. Las ÚNICAS diferencias respecto a prod están marcadas con  [QA].
+#
+#   [QA-1] Base de datos y volumen propios (datos desechables, aislados de prod).
+#   [QA-2] nginx se PUBLICA en un puerto del host para que QA/CI puedan entrar
+#          sin necesitar dominio ni TLS. En Dokploy, en su lugar, borra este
+#          bloque "ports" y asigna un dominio de QA (p.ej. qa.tu-dominio.com)
+#          desde la UI, igual que en prod.
+#   [QA-3] Se permite sembrar datos de prueba (el seed corre siempre; hazlo
+#          idempotente). Útil para tener fixtures reproducibles.
+#   [QA-4] NODE_ENV=production a propósito: QA valida el comportamiento REAL de
+#          producción, no el modo dev.
+# ===========================================================================
+
+services:
+  # --- Migraciones + seed (one-shot) --------------------------------------
+  migrate:
+    build:
+      context: .
+      target: build
+    restart: "no"
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public"
+    command: ["sh", "docker/migrate-and-seed.sh"]   # [QA-3] siembra fixtures de prueba
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+
+  # --- Aplicación (servidor SSR) ------------------------------------------
+  app:
+    build:
+      context: .
+      target: production
+    restart: always
+    environment:
+      NODE_ENV: production          # [QA-4] mismo runtime que prod
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public"
+      APP_NAME: ${APP_NAME}
+      APP_URL: ${APP_URL}           # p.ej. https://qa.tu-dominio.com o http://localhost:8080
+      NUXT_SECRET: ${NUXT_SECRET}
+      NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+    expose:
+      - "3000"
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768M
+
+  # --- Nginx (front) -------------------------------------------------------
+  nginx:
+    build:
+      context: .
+      target: nginx
+    restart: always
+    # [QA-2] Publicado al host para acceso directo sin dominio. En Dokploy,
+    # ELIMINA este bloque "ports" y asigna un dominio de QA desde la UI.
+    ports:
+      - "${QA_HTTP_PORT:-8080}:80"
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+
+  # --- Base de datos -------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    restart: always
+    # Sin "ports": la BD no se expone al host (igual que prod). Si QA necesita
+    # inspeccionar datos, usa `docker compose exec db psql ...`.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata-qa:/var/lib/postgresql/data    # [QA-1] volumen aislado de prod
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+volumes:
+  pgdata-qa:                                    # [QA-1] volumen aislado de prod
+
+networks:
+  internal:
+    driver: bridge

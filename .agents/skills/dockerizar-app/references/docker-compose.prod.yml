@@ -1,0 +1,135 @@
+# ===========================================================================
+# Entorno de PRODUCCIÓN (despliegue con Dokploy en VPS propio)
+#
+# En Dokploy: crea una aplicación tipo "Docker Compose" apuntando a este
+# archivo. Define las variables de entorno en la UI de Dokploy (no subas .env).
+#
+# Arquitectura:
+#
+#   Internet
+#      │  (TLS + routing)
+#   Traefik  ← lo gestiona Dokploy
+#      │
+#   nginx    ← sirve estáticos + proxy inverso        [red interna]
+#      │
+#   app      ← servidor de la app (SSR + API)          [red interna]
+#      │
+#   db       ← PostgreSQL                              [red interna]
+#
+# - Ningún puerto se publica al host: todo viaja por la red interna de Docker.
+# - Dokploy conecta automáticamente el servicio expuesto a su red "dokploy-network"
+#   y configura Traefik (dominio + TLS) desde la UI. Por eso NO se declara aquí.
+# - Las migraciones del ORM se aplican automáticamente antes de arrancar.
+# ===========================================================================
+
+services:
+  # --- Migraciones + seed (one-shot) --------------------------------------
+  # Aplica migraciones y ejecuta el seed (si existe), luego termina.
+  # "app" espera a que complete correctamente antes de arrancar.
+  # Usa la etapa "build" porque incluye el CLI del ORM, tsx y el esquema.
+  migrate:
+    build:
+      context: .
+      target: build
+    restart: "no"
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public"
+    command: ["sh", "docker/migrate-and-seed.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+
+  # --- Aplicación (servidor SSR) ------------------------------------------
+  app:
+    build:
+      context: .
+      target: production
+    restart: always
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public"
+      APP_NAME: ${APP_NAME}
+      APP_URL: ${APP_URL}
+      NUXT_SECRET: ${NUXT_SECRET}
+      NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+    # Sin "ports": no se publica al host. Solo accesible por red interna.
+    expose:
+      - "3000"
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768M
+
+  # --- Nginx (front público) ----------------------------------------------
+  nginx:
+    build:
+      context: .
+      target: nginx
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - internal        # habla con "app" por red interna
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+    # Sin labels de Traefik ni red "dokploy-network": Dokploy conecta este
+    # servicio a su red y gestiona Traefik automáticamente. El dominio y el TLS
+    # se configuran desde la UI de Dokploy (pestaña "Domains" -> servicio "nginx",
+    # puerto 80).
+
+  # --- Base de datos -------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    restart: always
+    # Sin "ports": la base de datos NO es accesible desde fuera de la red.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+volumes:
+  pgdata:
+
+networks:
+  # Red interna privada: app <-> db <-> nginx. No expuesta al host.
+  # Dokploy añade automáticamente su propia red al servicio expuesto.
+  internal:
+    driver: bridge
